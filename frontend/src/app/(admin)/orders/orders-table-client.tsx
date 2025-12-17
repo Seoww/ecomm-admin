@@ -31,8 +31,7 @@ export default function OrdersTableClient() {
     qs.set("offset", String(offset));
 
     const res = await fetch(
-      `http://0.0.0.0:8000/api/orders?${qs.toString()}`,
-    //   `${process.env.NEXT_PUBLIC_API_URL}/orders?${qs.toString()}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/orders?${qs.toString()}`,
       { cache: "no-store" }
     );
 

@@ -28,17 +28,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="font-semibold mb-6">Admin</div>
 
         <nav className="space-y-2 text-sm">
-          <Link href="/users" className="block hover:underline">
+          {/* <Link href="/users" className="block hover:underline">
             Users
           </Link>
           <Link href="/products" className="block hover:underline">
             Products
-          </Link>
+          </Link> */}
           <Link href="/orders" className="block hover:underline">
             Orders
-          </Link>
-          <Link href="/carts" className="block hover:underline">
-            Carts
           </Link>
         </nav>
       </aside>

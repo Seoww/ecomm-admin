@@ -39,12 +39,12 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     volumes:
-      - ./frontend:/app    # ← THIS allows live changes
-      - /app/node_modules  # prevent node_modules overwrite
+      - ./frontend:/app  
+      - /app/node_modules
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api
     command: ["npm", "run", "dev"]
 
 volumes:
