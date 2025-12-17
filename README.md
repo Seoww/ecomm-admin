@@ -54,7 +54,7 @@ Key goals:
 
 ### Prerequisites
 - Docker & Docker Compose
-- Node.js 18+
+- Node.js 20+
 - Python 3.11+
 
 ---
@@ -65,7 +65,7 @@ Create `.env` files as needed (do **not** commit them).
 
 #### Frontend (`frontend/.env`)
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=http://backend:8000/api
 ```
 
 #### Backend (`backend/.env`)
@@ -86,7 +86,7 @@ docker compose up --build
 
 Available services:
 - Frontend → http://localhost:3000
-- Backend API → http://0.0.0.0:8000
+- Backend API → http://localhost:8000
 - PostgreSQL → internal Docker network
 - Redis → internal Docker network
 

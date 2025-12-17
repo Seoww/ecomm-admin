@@ -25,6 +25,8 @@ async def list_orders(
     if cached:
         return loads(cached)
 
+    is_numeric_search = search.isdigit() if search else False
+
     count_sql = """
         SELECT COUNT(DISTINCT o.id)
         FROM orders o
@@ -35,8 +37,13 @@ async def list_orders(
     count_params = {}
 
     if search:
-        count_sql += " AND u.name ILIKE :search"
-        count_params["search"] = f"%{search}%"
+        if is_numeric_search:
+            count_sql += " AND (o.id = :order_id OR u.name ILIKE :search)"
+            count_params["order_id"] = int(search)
+            count_params["search"] = f"%{search}%"
+        else:
+            count_sql += " AND u.name ILIKE :search"
+            count_params["search"] = f"%{search}%"
 
     if status:
         count_sql += " AND o.status = :status"
@@ -54,8 +61,13 @@ async def list_orders(
     params = {}
 
     if search:
-        order_id_sql += " AND u.name ILIKE :search"
-        params["search"] = f"%{search}%"
+        if is_numeric_search:
+            order_id_sql += " AND (o.id = :order_id OR u.name ILIKE :search)"
+            params["order_id"] = int(search)
+            params["search"] = f"%{search}%"
+        else:
+            order_id_sql += " AND u.name ILIKE :search"
+            params["search"] = f"%{search}%"
 
     if status:
         order_id_sql += " AND o.status = :status"
