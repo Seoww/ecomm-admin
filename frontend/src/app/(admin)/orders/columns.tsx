@@ -1,27 +1,68 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
+export type OrdersResponse = {
+  data: Order[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    count: number;
+  };
+};
 
-import type { Order } from "./columns"; // adjust import if needed
+export type Order = {
+  order_id: number;
+  status: string;
+  total: number;
+  created_at: string;
+
+  user: {
+    user_id: number;
+    name: string;
+    email: string;
+  };
+
+  items: OrderItem[];
+};
+
+export type OrderItem = {
+  order_item_id: number;
+  qty: number;
+  unit_price: number;
+
+  product: {
+    product_id: number;
+    title: string;
+    sku: string;
+  };
+};
 
 const SortableHeader = ({
-  column,
+  table,
   label,
 }: {
-  column: any;
+  table: any;
   label: string;
 }) => {
-  const { sort, order } = column.columnDef.meta || {};
+  const header = table.header
+  const meta = header.getContext().table.options.meta as {
+    currentSort?: string;
+    currentOrder?: "asc" | "desc";
+  };
+  console.log("meta",meta)
+  console.log("table",table)
 
-  const isActive = sort === column.id;
+  const isActive = meta?.currentSort === header.column.id;
+  const order = meta?.currentOrder;
 
   return (
     <Button
       variant="ghost"
       className="flex items-center gap-2 px-0"
-      onClick={column.getToggleSortingHandler()}
+      onClick={header.column.getToggleSortingHandler()}
     >
       {label}
 
@@ -39,27 +80,27 @@ const SortableHeader = ({
 export const columns: ColumnDef<Order>[] = [
   {
     accessorKey: "order_id",
-    header: ({ column }) => (
-      <SortableHeader column={column} label="Order ID" />
+    header: (ctx) => (
+      <SortableHeader table={ctx} label="Order ID" />
     ),
   },
   {
     accessorKey: "status",
-    header: ({ column }) => (
-      <SortableHeader column={column} label="Status" />
+    header: (ctx) => (
+      <SortableHeader table={ctx} label="Status" />
     ),
   },
   {
     id: "customer_name",
     accessorFn: (row) => row.user.name,
-    header: ({ column }) => (
-      <SortableHeader column={column} label="Customer Name" />
+    header: (ctx) => (
+      <SortableHeader table={ctx} label="Customer Name" />
     ),
   },
   {
     accessorKey: "total",
-    header: ({ column }) => (
-      <SortableHeader column={column} label="Total" />
+    header: (ctx) => (
+      <SortableHeader table={ctx} label="Total" />
     ),
     cell: ({ getValue }) => {
       const value = Number(getValue() ?? 0);

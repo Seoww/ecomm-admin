@@ -3,7 +3,7 @@
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-import { columns, DataResponse } from "./columns";
+import { columns, OrdersResponse } from "./columns";
 import { DataTable } from "./data-table";
 
 const getParam = (sp: URLSearchParams, key: string) =>
@@ -18,12 +18,11 @@ export default function OrdersTableClient() {
   const offset = Number(getParam(searchParams, "offset") ?? 0);
   const search = getParam(searchParams, "search") ?? "";
 
-  /** NEW: sorting from URL */
   const sort = getParam(searchParams, "sort") ?? "created_at";
   const order =
     (getParam(searchParams, "order") as "asc" | "desc") ?? "desc";
 
-  const [data, setData] = React.useState<DataResponse | null>(null);
+  const [data, setData] = React.useState<OrdersResponse | null>(null);
   const [loading, setLoading] = React.useState(false);
 
   const fetchOrders = React.useCallback(async () => {
@@ -47,20 +46,21 @@ export default function OrdersTableClient() {
       throw new Error("Failed to fetch orders");
     }
 
-    const json: DataResponse = await res.json();
+    const json: OrdersResponse = await res.json();
     setData(json);
     setLoading(false);
   }, [search, sort, order, limit, offset]);
 
-    const prevParamsRef = React.useRef("");
-    React.useEffect(() => {
-        const key = `${search}|${limit}|${offset}|${sort}|${order}`;
+  const prevKeyRef = React.useRef("");
 
-        if (prevParamsRef.current === key) return;
-        prevParamsRef.current = key;
+  React.useEffect(() => {
+    const key = `${search}|${limit}|${offset}|${sort}|${order}`;
 
-        fetchOrders();
-    }, [search, limit, offset, sort, order, fetchOrders]);
+    if (prevKeyRef.current === key) return;
+    prevKeyRef.current = key;
+
+    fetchOrders();
+  }, [search, limit, offset, sort, order, fetchOrders]);
 
   const updateParams = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
