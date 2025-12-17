@@ -1,61 +1,21 @@
 "use client";
 
-import { ColumnDef, HeaderContext } from "@tanstack/react-table";
-import { Button } from "@/components/ui/button";
+import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-export type DataResponse = {
-  data: Order[];
-  pagination: {
-    count: number;
-    limit: number;
-    offset: number;
-    total: number;
-  };
-};
+import type { Order } from "./columns"; // adjust import if needed
 
-export type Order = {
-  items: OrderItems[];
-  order_id: number;
-  total: number;
-  status: string;
-  user: {
-    email: string;
-    name: string;
-    user_id: number;
-  };
-};
-
-export type OrderItems = {
-  order_item_id: number;
-  qty: number;
-  unit_price: number;
-  product: {
-    product_id: number;
-    title: string;
-    sku: string;
-  };
-};
-
-export type SortMeta = {
-  currentSort: string;
-  currentOrder: "asc" | "desc";
-};
-
-const SortableHeader = <TData,>({
-  header,
+const SortableHeader = ({
+  column,
   label,
 }: {
-  header: HeaderContext<TData, unknown>;
+  column: any;
   label: string;
 }) => {
-  const table = header.table;
-  const column = header.column;
+  const { sort, order } = column.columnDef.meta || {};
 
-  const meta = table.options.meta as SortMeta | undefined;
-
-  const isActive = meta?.currentSort === column.id;
-  const order = meta?.currentOrder;
+  const isActive = sort === column.id;
 
   return (
     <Button
@@ -79,31 +39,31 @@ const SortableHeader = <TData,>({
 export const columns: ColumnDef<Order>[] = [
   {
     accessorKey: "order_id",
-    enableSorting: true,
-    header: (ctx) => (
-      <SortableHeader header={ctx} label="Order ID" />
+    header: ({ column }) => (
+      <SortableHeader column={column} label="Order ID" />
     ),
   },
   {
     accessorKey: "status",
-    enableSorting: true,
-    header: (ctx) => (
-      <SortableHeader header={ctx} label="Status" />
+    header: ({ column }) => (
+      <SortableHeader column={column} label="Status" />
     ),
   },
   {
     id: "customer_name",
-    enableSorting: true,
     accessorFn: (row) => row.user.name,
-    header: (ctx) => (
-      <SortableHeader header={ctx} label="Customer Name" />
+    header: ({ column }) => (
+      <SortableHeader column={column} label="Customer Name" />
     ),
   },
   {
     accessorKey: "total",
-    enableSorting: true,
-    header: (ctx) => (
-      <SortableHeader header={ctx} label="Total" />
+    header: ({ column }) => (
+      <SortableHeader column={column} label="Total" />
     ),
+    cell: ({ getValue }) => {
+      const value = Number(getValue() ?? 0);
+      return `RM ${value.toFixed(2)}`;
+    },
   },
 ];
