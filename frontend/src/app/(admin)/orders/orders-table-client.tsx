@@ -18,6 +18,11 @@ export default function OrdersTableClient() {
   const offset = Number(getParam(searchParams, "offset") ?? 0);
   const search = getParam(searchParams, "search") ?? "";
 
+  /** NEW: sorting from URL */
+  const sort = getParam(searchParams, "sort") ?? "created_at";
+  const order =
+    (getParam(searchParams, "order") as "asc" | "desc") ?? "desc";
+
   const [data, setData] = React.useState<DataResponse | null>(null);
   const [loading, setLoading] = React.useState(false);
 
@@ -25,26 +30,37 @@ export default function OrdersTableClient() {
     setLoading(true);
 
     const qs = new URLSearchParams();
+
     if (search) qs.set("search", search);
+    if (sort) qs.set("sort", sort);
+    if (order) qs.set("order", order);
 
     qs.set("limit", String(limit));
     qs.set("offset", String(offset));
 
-    const res = await fetch(
-      `/api/orders?${qs.toString()}`,
-      { cache: "no-store" }
-    );
+    const res = await fetch(`/api/orders?${qs.toString()}`, {
+      cache: "no-store",
+    });
 
-    if (!res.ok) throw new Error("Failed to fetch orders");
+    if (!res.ok) {
+      setLoading(false);
+      throw new Error("Failed to fetch orders");
+    }
 
     const json: DataResponse = await res.json();
     setData(json);
     setLoading(false);
-  }, [search, limit, offset]);
+  }, [search, sort, order, limit, offset]);
 
-  React.useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+    const prevParamsRef = React.useRef("");
+    React.useEffect(() => {
+        const key = `${search}|${limit}|${offset}|${sort}|${order}`;
+
+        if (prevParamsRef.current === key) return;
+        prevParamsRef.current = key;
+
+        fetchOrders();
+    }, [search, limit, offset, sort, order, fetchOrders]);
 
   const updateParams = (updates: Record<string, string | null>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -70,11 +86,23 @@ export default function OrdersTableClient() {
       limit={limit}
       offset={offset}
       search={search}
+      sort={sort}
+      order={order}
       onSearch={(v) =>
-        updateParams({ search: v || null, offset: "0" })
+        updateParams({
+          search: v || null,
+          offset: "0",
+        })
       }
       onPageChange={(nextOffset) =>
         updateParams({ offset: String(nextOffset) })
+      }
+      onSortChange={(nextSort, nextOrder) =>
+        updateParams({
+          sort: nextSort,
+          order: nextOrder,
+          offset: "0",
+        })
       }
     />
   );

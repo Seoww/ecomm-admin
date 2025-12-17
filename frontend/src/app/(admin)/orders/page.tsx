@@ -1,3 +1,5 @@
+"use client";
+
 import OrdersTableClient from "./orders-table-client";
 
 export default function OrdersPage() {

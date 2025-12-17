@@ -8,17 +8,32 @@ from app.utils.cache_json import dumps, loads
 
 router = APIRouter()
 
+SORT_COLUMNS = {
+    "created_at": "o.created_at",
+    "order_id": "o.id",
+    "status": "o.status",
+    "total": "o.total",
+    "customer_name": "u.name",
+}
+
 @router.get("/")
 async def list_orders(
     search: str | None = Query(None),
     status: str | None = Query(None),
+    sort: str = Query("created_at"),
+    order: str = Query("desc"),
     limit: int = 50,
     offset: int = 0,
     db: AsyncSession = Depends(get_db),
 ):
+    sort_column = SORT_COLUMNS.get(sort, "o.created_at")
+    sort_direction = "ASC" if order == "asc" else "DESC"
+
     cache_key = (
         f"orders:list:"
-        f"search={search}|status={status}|limit={limit}|offset={offset}"
+        f"search={search}|status={status}|"
+        f"sort={sort}|order={order}|"
+        f"limit={limit}|offset={offset}"
     )
 
     cached = redis_client.get(cache_key)
@@ -27,6 +42,9 @@ async def list_orders(
 
     is_numeric_search = search.isdigit() if search else False
 
+    # --------------------
+    # Count query
+    # --------------------
     count_sql = """
         SELECT COUNT(DISTINCT o.id)
         FROM orders o
@@ -51,7 +69,10 @@ async def list_orders(
 
     total = (await db.execute(text(count_sql), count_params)).scalar() or 0
 
-    order_id_sql = """
+    # --------------------
+    # ID pagination query
+    # --------------------
+    order_id_sql = f"""
         SELECT o.id
         FROM orders o
         JOIN users u ON o.user_id = u.id
@@ -73,8 +94,8 @@ async def list_orders(
         order_id_sql += " AND o.status = :status"
         params["status"] = status
 
-    order_id_sql += """
-        ORDER BY o.created_at DESC
+    order_id_sql += f"""
+        ORDER BY {sort_column} {sort_direction}, o.id DESC
         LIMIT :limit OFFSET :offset
     """
 
@@ -99,7 +120,10 @@ async def list_orders(
         redis_client.setex(cache_key, 30, dumps(response))
         return response
 
-    sql = """
+    # --------------------
+    # Full data query
+    # --------------------
+    sql = f"""
         SELECT 
             o.id AS order_id,
             o.status,
@@ -119,7 +143,7 @@ async def list_orders(
         JOIN order_items oi ON oi.order_id = o.id
         JOIN products p ON oi.product_id = p.id
         WHERE o.id = ANY(:order_ids)
-        ORDER BY o.created_at DESC
+        ORDER BY {sort_column} {sort_direction}, o.id DESC
     """
 
     rows = (await db.execute(text(sql), {"order_ids": order_ids})).fetchall()

@@ -5,6 +5,8 @@ import {
   ColumnDef,
   flexRender,
   getCoreRowModel,
+  getSortedRowModel,
+  SortingState,
   useReactTable,
 } from "@tanstack/react-table";
 
@@ -35,11 +37,18 @@ interface DataTableProps<TData> {
   data: TData[];
   total: number;
   loading?: boolean;
+
   limit: number;
   offset: number;
+
   search: string;
   onSearch: (value: string) => void;
   onPageChange: (offset: number) => void;
+
+  /** NEW */
+  sort: string;
+  order: "asc" | "desc";
+  onSortChange: (sort: string, order: "asc" | "desc") => void;
 }
 
 export function DataTable<TData>({
@@ -52,8 +61,12 @@ export function DataTable<TData>({
   search,
   onSearch,
   onPageChange,
+  sort,
+  order,
+  onSortChange,
 }: DataTableProps<TData>) {
   const [searchInput, setSearchInput] = React.useState(search);
+
   const debouncedSearch = useDebounced(searchInput);
 
   React.useEffect(() => {
@@ -61,10 +74,58 @@ export function DataTable<TData>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedSearch]);
 
+  /** -------------------------
+   * Sorting (URL-driven)
+   * ------------------------- */
+  const [sorting, setSorting] = React.useState<SortingState>(() =>
+    sort
+      ? [{ id: sort, desc: order !== "asc" }]
+      : [{ id: "created_at", desc: true }]
+  );
+  
+
+  const handleSortingChange = (
+    updater: SortingState | ((old: SortingState) => SortingState)
+  ) => {
+    const next =
+      typeof updater === "function" ? updater(sorting) : updater;
+
+    setSorting(next);
+
+    if (!next.length) {
+      return;
+    }
+
+    onSortChange(
+      next[0].id,
+      next[0].desc ? "desc" : "asc"
+    );
+
+    // // reset pagination on sort
+    // onPageChange(0);
+  };
+
+  React.useEffect(() => {
+    setSorting(
+      sort
+        ? [{ id: sort, desc: order !== "asc" }]
+        : []
+    );
+  }, [sort, order]);
+
+
   const table = useReactTable({
     data,
     columns,
+    state: { sorting },
+    onSortingChange: handleSortingChange,
+    manualSorting: true,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    meta: {
+      currentSort: sort,
+      currentOrder: order,
+    },
   });
 
   const pageIndex = Math.floor(offset / limit);
@@ -98,34 +159,33 @@ export function DataTable<TData>({
         </TableHeader>
 
         <TableBody>
-            {loading ? (
-                <TableRow>
-                <TableCell colSpan={columns.length} className="text-center py-6">
-                    Loading…
-                </TableCell>
-                </TableRow>
-            ) : table.getRowModel().rows.length ? (
-                table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                    {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
-                        {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                        )}
-                    </TableCell>
-                    ))}
-                </TableRow>
-                ))
-            ) : (
-                <TableRow>
-                <TableCell colSpan={columns.length} className="text-center py-6">
-                    No results
-                </TableCell>
-                </TableRow>
-            )}
+          {loading ? (
+            <TableRow>
+              <TableCell colSpan={columns.length} className="text-center py-6">
+                Loading…
+              </TableCell>
+            </TableRow>
+          ) : table.getRowModel().rows.length ? (
+            table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(
+                      cell.column.columnDef.cell,
+                      cell.getContext()
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={columns.length} className="text-center py-6">
+                No results
+              </TableCell>
+            </TableRow>
+          )}
         </TableBody>
-
       </Table>
 
       <div className="flex items-center justify-between p-4">
