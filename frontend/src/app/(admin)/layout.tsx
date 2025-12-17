@@ -34,7 +34,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <Link href="/products" className="block hover:underline">
             Products
           </Link> */}
-          <Link href="/orders" className="block hover:underline">
+          <Link href="/" className="block hover:underline">
             Orders
           </Link>
         </nav>
