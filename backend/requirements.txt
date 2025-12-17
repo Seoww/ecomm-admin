@@ -1,0 +1,10 @@
+numpy>=1.26.0
+fastapi
+uvicorn[standard]
+alembic
+psycopg[binary,pool]
+faker==18.9.0
+pydantic_settings
+asyncpg
+redis
+orjson==3.10.7
